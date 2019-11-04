@@ -1,0 +1,50 @@
+plugins {
+  id 'com.google.cloud.tools.jib' version '1.5.0'
+	id "org.springframework.boot" version "2.2.0.RELEASE"
+}
+
+apply plugin: "java"
+apply plugin: "io.spring.dependency-management"
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+	jcenter()
+	mavenCentral()
+}
+
+dependencies {
+	implementation "com.google.code.gson:gson:+"
+	implementation "com.google.guava:guava:+"
+	implementation "org.apache.avro:avro:+"
+  implementation "org.mariadb.jdbc:mariadb-java-client:+"
+	implementation "org.springframework.boot:spring-boot-starter-web"
+	
+	implementation 'com.codahale.metrics:metrics-core:+'
+
+// // aws sdk bundle
+     implementation 'com.amazonaws:aws-java-sdk-bundle:+'
+// // aws sdk ala carte
+    //  implementation platform('com.amazonaws:aws-java-sdk-bom:+')
+    //  implementation 'com.amazonaws:aws-java-sdk-s3'
+
+// // aws sdk 2
+//     implementation platform('software.amazon.awssdk:bom:+')
+//     implementation 'software.amazon.awssdk:s3'
+//     implementation 'software.amazon.awssdk:sns'
+//     implementation 'software.amazon.awssdk:sqs'
+
+		// implementation 'org.springframework.cloud:spring-cloud-starter-aws-parameter-store-config'
+}
+
+jib {
+  from {
+    image = "openjdk:8-alpine"
+//    image = "amazonlinux:2"
+  }
+}
+
+// configurations {
+//     all*.exclude module : 'spring-boot-starter-logging'
+// }
