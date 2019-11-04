@@ -9,14 +9,13 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
-import com.amazonaws.services.dynamodbv2.model.PutItemResult;
 import com.amazonaws.services.dynamodbv2.model.PutRequest;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
-import com.google.gson.Gson;
+import com.google.common.hash.Hashing;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 
@@ -52,19 +51,6 @@ public class Main {
     writeMetrics(metrics);
   }
 
-  // public PutItemResult writeMetric(Object object) throws Exception {
-  //   log("writeMetric", object);
-  //   // // id
-  //   // String id = String.class.cast(object.getClass().getFields()[0].get(object));
-  //   // // item key
-  //   Map<String, AttributeValue> item = new HashMap<>();
-  //   // item values
-  //   for (Map.Entry<String, JsonElement> entry : new Gson().toJsonTree(object).getAsJsonObject().entrySet())
-  //     item.put(entry.getKey(), new AttributeValue(entry.getValue().getAsString()));
-  //   // write
-  //   return dynamo.putItem(tableName, item);
-  // }
-
   public int writeMetrics(List<Metric> metrics) throws Exception {
     log("batchWrite", metrics.size());
 
@@ -79,11 +65,13 @@ public class Main {
       String id = idAndTs.getKey().getKey();
       String ts = idAndTs.getKey().getValue();
       //
+      ts = String.format("%s/%s", ts, Hashing.sha256().hashLong(new Random().nextLong()).toString().substring(0,7));
+      //
       Map<String, AttributeValue> item = new HashMap<>();
       item.put("id", new AttributeValue(id));
       item.put("tskey", new AttributeValue(ts));
       for (Map.Entry<String, JsonElement> entry : idAndTs.getValue().entrySet())
-        item.put(entry.getKey(), new AttributeValue(entry.getValue().getAsString()));
+        item.put(entry.getKey(), new AttributeValue(entry.getValue().getAsString())); //###TODO MAY WANT TO WRITE AS STRING OR NUMBER
       //
       writeRequests.add(new WriteRequest(new PutRequest(item)));
     }
@@ -108,25 +96,14 @@ public class Main {
 
   private Metric randomMetric() {
     final List<String> properties = ImmutableList.of("latitude", "longitude", "altitude", "velocity", "flOctets", "rlOctets");
-    String id = String.format("arclight/%s.%s", new Random().nextInt(16), new Random().nextInt(16));
-    String ts = Instant.now().toString();
+    String id = String.format("arclight/%s.%s", new Random().nextInt(256), new Random().nextInt(256));
+    // String ts = Instant.now().toString();
+    String ts = Instant.ofEpochMilli(new Random().nextLong()).toString();
     String key = properties.get(new Random().nextInt(properties.size()));
     JsonElement val = new JsonPrimitive(new Random().nextLong());
     return new Metric(id, ts, key, val);
   }
 
-  // private JsonObject randomMetricz() {
-  //   List<String> properties = ImmutableList.of("latitude", "longitude", "altitude", "velocity", "flOctets", "rlOctets");
-  //   JsonObject jsonObject = new JsonObject();
-  //   String id = String.format("arclight/%s.%s", new Random().nextInt(16), new Random().nextInt(16));
-  //   jsonObject.addProperty("id", id);
-  //   String ts = String.format("%s/%s", Instant.now().toString(), Hashing.sha256().hashLong(new Random().nextLong()).toString().substring(0,7));
-  //   jsonObject.addProperty("tskey", ts);
-  //   for (String property : properties)
-  //     jsonObject.addProperty(property, new Random().nextLong());
-  //   return jsonObject;
-  // }
- 
   // private String random() {
   //   return UUID.randomUUID().toString();
   // }
